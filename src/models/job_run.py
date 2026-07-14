@@ -1,5 +1,5 @@
-from datetime import datetime
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from src.models.job import Job
 
 
-class JobRunStatus(str, Enum):
+class JobRunStatus(StrEnum):
     PENDING = "pending"
     ACTIVE = "active"
     COMPLETED = "completed"
@@ -21,10 +21,11 @@ class JobRun(BaseModel):
     captured_output: str = ""
     started_at: datetime | None = None
     finished_at: datetime | None = None
+    exception: str | None = None
 
 
 class JobException(BaseModel):
     job_exception_id: UUID = Field(default_factory=uuid4)
-    job_run: JobRun
+    job_run_id: UUID
     exception: str
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

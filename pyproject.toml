@@ -1,11 +1,23 @@
 [project]
 name = "dark-orchestrator"
 version = "0.1.0"
-description = "Add your description here"
+description = "Schedules and monitors Dark Business processes"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi>=0.139.0",
-    "pydantic-settings>=2.14.2",
-    "uvicorn>=0.51.0",
+    "croniter>=6.2.4,<7",
+    "fastapi>=0.139.0,<1",
+    "psycopg[binary]>=3.3.4,<4",
+    "pydantic-settings>=2.14.2,<3",
+    "uvicorn>=0.51.0,<1",
 ]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.5.0,<3",
+    "pygments>=2.20.0,<3",
+    "pytest>=9.1.1,<10",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

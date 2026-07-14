@@ -1,0 +1,2 @@
+CREATE DATABASE dark_orchestrator_test OWNER dark_orchestrator;
+CREATE DATABASE dark_orchestrator_e2e OWNER dark_orchestrator;

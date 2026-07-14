@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: >-
+      postgres:18.2-alpine@sha256:035b9ab53cfa147d7202b61f5f7782b939ae815b7d6bc81c96b7b42ff1fca950
+    environment:
+      POSTGRES_DB: dark_orchestrator
+      POSTGRES_USER: dark_orchestrator
+      POSTGRES_PASSWORD: dark_orchestrator
+    ports:
+      - "127.0.0.1:54329:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dark_orchestrator -d dark_orchestrator"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - dark_orchestrator_postgres:/var/lib/postgresql
+      - ./docker/postgres/init-test-databases.sql:/docker-entrypoint-initdb.d/tests.sql:ro
+
+volumes:
+  dark_orchestrator_postgres:
