@@ -4,8 +4,9 @@ from uuid import UUID, uuid4
 from psycopg.errors import ForeignKeyViolation
 from psycopg.rows import DictRow
 
-from src.database import Database
 from src.errors import ConflictError, NotFoundError
+from src.infrastructure.database import Database
+from src.infrastructure.script_files import ScriptFileResolver
 from src.models.process import (
     FileProcessSource,
     InlineProcessSource,
@@ -14,7 +15,6 @@ from src.models.process import (
     ProcessSource,
     ProcessUpdate,
 )
-from src.services.script_files import ScriptFileResolver
 
 
 class ProcessService:

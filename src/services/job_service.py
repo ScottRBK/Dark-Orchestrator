@@ -6,8 +6,8 @@ from croniter import croniter
 from psycopg.errors import ForeignKeyViolation
 from psycopg.rows import DictRow
 
-from src.database import Database
 from src.errors import ConflictError, NotFoundError
+from src.infrastructure.database import Database
 from src.models.job import Job, JobCreate, JobUpdate
 from src.models.job_run import JobRun, JobRunStatus
 from src.models.process import Process

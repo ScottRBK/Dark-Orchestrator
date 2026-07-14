@@ -27,9 +27,9 @@ flowchart TB
     end
 
     subgraph infrastructure["Infrastructure adapters"]
-        database["Database<br/>Psycopg and migrations"]
-        files["ScriptFileResolver<br/>Filesystem boundary"]
-        executor["ProcessExecutor<br/>Operating-system boundary"]
+        database["Database<br/>src/infrastructure/database.py"]
+        files["ScriptFileResolver<br/>src/infrastructure/script_files.py"]
+        executor["ProcessExecutor<br/>src/infrastructure/executor.py"]
     end
 
     models["Pydantic models<br/>Shared API and domain contracts"]
@@ -69,6 +69,7 @@ flowchart TB
 - `ProcessService` manages process lifecycle and source persistence.
 - `JobService` manages schedules, atomic claims, run history, and exceptions.
 - `Orchestrator` owns scheduler state, heartbeats, concurrency, and execution tasks.
+- `src/infrastructure/` contains the PostgreSQL, filesystem, and child-process boundaries.
 - `ProcessExecutor` owns child processes, timeout, termination, and output capture.
 - `Database` and `ScriptFileResolver` isolate PostgreSQL and filesystem concerns.
 - `web/src/App.tsx` owns dashboard state; `web/src/api.ts` is the REST client.

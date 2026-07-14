@@ -4,8 +4,8 @@ import signal
 import sys
 from dataclasses import dataclass
 
+from src.infrastructure.script_files import ScriptFileResolver
 from src.models.process import FileProcessSource, Process, ProcessType
-from src.services.script_files import ScriptFileResolver
 
 
 @dataclass(frozen=True)

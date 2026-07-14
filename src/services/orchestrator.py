@@ -3,8 +3,8 @@ import logging
 from enum import StrEnum
 
 from src.config.settings import Settings
+from src.infrastructure.executor import ProcessExecutor, ProcessTimeoutError
 from src.models.job_run import JobRunStatus
-from src.services.executor import ProcessExecutor, ProcessTimeoutError
 from src.services.job_service import ClaimedJob, JobService
 
 logger = logging.getLogger(__name__)

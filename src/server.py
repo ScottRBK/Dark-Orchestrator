@@ -7,16 +7,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.config.settings import Settings
-from src.database import Database
 from src.errors import ConflictError, InvalidProcessSourceError, NotFoundError
+from src.infrastructure.database import Database
+from src.infrastructure.executor import ProcessExecutor
+from src.infrastructure.script_files import ScriptFileResolver
 from src.models.job import Job, JobCreate, JobUpdate
 from src.models.job_run import JobRun
 from src.models.process import Process, ProcessCreate, ProcessUpdate
-from src.services.executor import ProcessExecutor
 from src.services.job_service import JobService
 from src.services.orchestrator import Orchestrator
 from src.services.process_service import ProcessService
-from src.services.script_files import ScriptFileResolver
 
 
 class Server:

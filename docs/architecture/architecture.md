@@ -27,9 +27,9 @@ src/models/                    Shared API and domain models
 src/services/process_service.py Process lifecycle and source persistence
 src/services/job_service.py    Scheduling, claiming, runs, and exceptions
 src/services/orchestrator.py   Scheduler loop and execution concurrency
-src/services/executor.py       Child-process execution boundary
-src/services/script_files.py   Filesystem source security boundary
-src/database.py                Psycopg connections and migration runner
+src/infrastructure/database.py Psycopg connections and migration runner
+src/infrastructure/executor.py Child-process execution boundary
+src/infrastructure/script_files.py Filesystem source security boundary
 src/migrations/                Ordered PostgreSQL migrations
 web/src/App.tsx                Dashboard state, views, and forms
 web/src/api.ts                 Typed REST client
@@ -87,9 +87,9 @@ flowchart TB
     end
 
     subgraph infrastructure["Infrastructure adapters"]
-        database["Database"]
-        files["ScriptFileResolver"]
-        executor["ProcessExecutor"]
+        database["Database<br/>src/infrastructure/database.py"]
+        files["ScriptFileResolver<br/>src/infrastructure/script_files.py"]
+        executor["ProcessExecutor<br/>src/infrastructure/executor.py"]
     end
 
     models["Pydantic models<br/>Shared API and domain contracts"]

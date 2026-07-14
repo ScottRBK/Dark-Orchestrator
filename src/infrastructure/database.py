@@ -9,7 +9,7 @@ from psycopg.rows import dict_row
 class Database:
     def __init__(self, url: str) -> None:
         self._url = url
-        self._migrations_dir = Path(__file__).parent / "migrations"
+        self._migrations_dir = Path(__file__).parents[1] / "migrations"
 
     @asynccontextmanager
     async def connection(self) -> AsyncIterator[AsyncConnection]:
