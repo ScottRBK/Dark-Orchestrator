@@ -3,7 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-07-13
 - **Scope:** Implemented v1 baseline in this repository
-- **Extended by:** [ADR-002](adr2_process_script_sources.md)
+- **Extended by:** [ADR-002](adr2_process_script_sources.md) and
+  [ADR-003](adr3_command_line_client.md)
 
 This ADR replaces the local architecture sketch copied from the Dark Business solution. It records
 what Dark Orchestrator currently does. It does not commit the system to deferred features described

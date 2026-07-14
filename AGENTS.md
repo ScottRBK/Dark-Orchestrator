@@ -11,8 +11,9 @@ application lifespan. The arrows below show the primary runtime dependencies aft
 
 ```mermaid
 flowchart TB
-    subgraph frontend["React client"]
+    subgraph clients["Clients"]
         app["App.tsx<br/>State, views, forms"] --> api_client["api.ts<br/>REST client"]
+        cli_entry["dark-orchestrator"] --> cli["src/cli.py<br/>Arguments, HTTP, JSON"]
     end
 
     subgraph boundary["Entry and HTTP boundary"]
@@ -35,6 +36,7 @@ flowchart TB
     models["Pydantic models<br/>Shared API and domain contracts"]
 
     api_client -->|"HTTP /api"| server
+    cli -->|"HTTP /api"| server
     server --> settings
     server --> process_service
     server --> job_service
@@ -64,6 +66,7 @@ flowchart TB
 ## Component Responsibilities
 
 - `main.py` loads settings, creates the ASGI application, and starts Uvicorn.
+- `dark-orchestrator` and `src/cli.py` provide the JSON-first REST CLI.
 - `src/server.py` composes dependencies, owns lifespan, and exposes the REST API.
 - `src/models/` contains shared Pydantic API and domain contracts.
 - `ProcessService` manages process lifecycle and source persistence.
@@ -72,7 +75,9 @@ flowchart TB
 - `src/infrastructure/` contains the PostgreSQL, filesystem, and child-process boundaries.
 - `ProcessExecutor` owns child processes, timeout, termination, and output capture.
 - `Database` and `ScriptFileResolver` isolate PostgreSQL and filesystem concerns.
-- `web/src/App.tsx` owns dashboard state; `web/src/api.ts` is the REST client.
+- `web/src/App.tsx` owns dashboard state; `web/src/api.ts` is the browser REST client.
+- `cli_tests/` verifies CLI subprocess and HTTP-contract behavior without application
+  infrastructure.
 
 ## Architectural Rules
 

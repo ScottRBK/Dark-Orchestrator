@@ -9,7 +9,8 @@ Dark Orchestrator is a pragmatic modular monolith:
 
 - one FastAPI process contains the REST API, application services, scheduler, and executor;
 - PostgreSQL is the durable state store;
-- a React application uses the REST API and is served by FastAPI in production;
+- a React application and Python CLI use the REST API;
+- FastAPI serves the React application in production;
 - Bash and Python child processes perform scheduled work; and
 - business behavior, AgentShell commands, and Surely CRM interaction remain inside scripts.
 
@@ -20,8 +21,10 @@ internal code. This keeps the implementation easy to understand while the domain
 ## Repository Map
 
 ```text
-main.py                         Application entry point
-src/config/settings.py         Environment-backed configuration
+main.py                         Server application entry point
+dark-orchestrator               CLI executable
+src/cli.py                     CLI parsing, REST requests, and JSON output
+src/config/settings.py         Environment-backed server configuration
 src/server.py                  Composition root, lifespan, routes, SPA serving
 src/models/                    Shared API and domain models
 src/services/process_service.py Process lifecycle and source persistence
@@ -35,19 +38,23 @@ web/src/App.tsx                Dashboard state, views, and forms
 web/src/api.ts                 Typed REST client
 web/src/types.ts               Frontend API contracts
 tests/                         HTTP integration and execution tests
+cli_tests/                     CLI subprocess and HTTP-contract tests
 web/tests/                     Playwright browser tests
 ```
 
 ## Runtime Context
 
-The React dashboard runs in the operator's browser. FastAPI serves its production assets and REST
-API. The API process owns the scheduler and launches child processes. Those scripts may use external
-systems, but the orchestrator does not import their business logic.
+The React dashboard runs in the operator's browser. The Python CLI runs in a shell and is suitable
+for agent automation. Both clients use the same REST API. FastAPI serves the dashboard's production
+assets, owns the scheduler, and launches child processes. Those scripts may use external systems,
+but the orchestrator does not import their business logic.
 
 ```mermaid
 flowchart LR
     operator["Operator"] -->|"operates"| dashboard["React dashboard<br/>Browser client"]
+    agent["AI agent"] -->|"invokes"| cli["Python CLI<br/>JSON output"]
     dashboard -->|"REST /api"| api
+    cli -->|"REST /api"| api
 
     subgraph runtime["Dark Orchestrator runtime"]
         api["FastAPI application<br/>API, services, scheduler, executor"]
@@ -71,8 +78,9 @@ composition rather than every import.
 
 ```mermaid
 flowchart TB
-    subgraph frontend["React client"]
+    subgraph clients["Clients"]
         app["App.tsx<br/>State, views, forms"] --> api_client["api.ts<br/>REST client"]
+        cli_entry["dark-orchestrator"] --> cli_client["src/cli.py<br/>Arguments, HTTP, JSON"]
     end
 
     subgraph boundary["Entry and HTTP boundary"]
@@ -95,6 +103,7 @@ flowchart TB
     models["Pydantic models<br/>Shared API and domain contracts"]
 
     api_client -->|"HTTP /api"| server
+    cli_client -->|"HTTP /api"| server
     server --> settings
     server --> process_service
     server --> job_service
@@ -161,7 +170,8 @@ The main route groups are:
 - job lifecycle and run-now requests; and
 - bounded run-history queries.
 
-The REST API is the public application seam used by the dashboard and integration tests.
+The REST API is the public application seam used by the dashboard, CLI, and backend integration
+tests. The CLI has no privileged in-process path around this boundary.
 
 ## Shared Models
 
@@ -419,6 +429,23 @@ global state library, WebSocket channel, or component framework.
 During development, Vite serves the frontend and proxies `/api` to FastAPI. In production, FastAPI
 serves the built assets and handles the same-origin REST requests.
 
+## CLI Architecture
+
+The repository-root `dark-orchestrator` executable delegates to `src/cli.py`. The CLI uses argparse,
+`urllib`, and JSON from the Python standard library. It does not import server models or services.
+
+The command hierarchy covers health, scheduler controls, process management, job management, and run
+history. `--url` overrides `DARK_ORCH_API_URL`, which overrides the loopback default. Successful
+response bodies are emitted as JSON on standard output. HTTP, network, and malformed-response errors
+are emitted as JSON on standard error with a non-zero exit status.
+
+Process `--file` values refer to paths beneath the server's `SCRIPT_ROOT`; they are not client-side
+uploads. This preserves the source ownership and filesystem boundary established by ADR-002.
+
+The executable is currently distributed from a source checkout and can be symlinked onto `PATH`.
+The project was not converted into a Python distribution solely to expose a console entry point.
+ADR-003 records the client contract and the deferred packaging decision.
+
 ## Configuration and Deployment
 
 `Settings` uses the `DARK_ORCH_` environment prefix and supports `.env`. Important operational
@@ -456,6 +483,7 @@ These limits matter before treating the scheduler as a distributed worker cluste
 Tests exercise public behavior rather than internal call graphs:
 
 - FastAPI tests use the HTTP API and real PostgreSQL;
+- CLI tests invoke the executable against a deterministic local HTTP server;
 - execution tests launch harmless real Bash and Python processes;
 - source tests use real files and filesystem permissions;
 - concurrency tests use real database claims and orchestrator instances;
@@ -465,6 +493,10 @@ Tests exercise public behavior rather than internal call graphs:
 Mocks are reserved for external systems that cannot be run locally. AgentShell and Surely CRM are
 not required for orchestrator integration tests because harmless scripts exercise the execution
 boundary.
+
+CLI contract tests deliberately stop at the HTTP boundary and require neither FastAPI nor
+PostgreSQL. A full-stack CLI integration suite is deferred to a separate slice rather than using a
+long-lived database implicitly.
 
 ## Current Design Pressure Points
 
@@ -486,5 +518,6 @@ needs it.
 - [ADR index](adr/index.md)
 - [ADR-001: First implementation](adr/adr1_dark_orchestrator.md)
 - [ADR-002: Process script sources](adr/adr2_process_script_sources.md)
+- [ADR-003: Command-line REST client](adr/adr3_command_line_client.md)
 - [Dependency audit](../dependency-audit.md)
 - [Project README](../../README.md)

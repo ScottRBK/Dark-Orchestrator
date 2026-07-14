@@ -7,6 +7,7 @@ the Surely CRM client.
 ## Capabilities
 
 - FastAPI REST API with automatic OpenAPI documentation
+- JSON-first Python CLI for the complete REST API
 - PostgreSQL persistence and ordered SQL migrations
 - Bash and Python process execution
 - Inline scripts and filesystem-backed scripts beneath a configured root
@@ -47,6 +48,50 @@ Open <http://127.0.0.1:8099>. API documentation is available at
 
 Database migrations run automatically during application startup.
 
+## Command-line client
+
+Run the CLI directly from the repository:
+
+```bash
+./dark-orchestrator health
+```
+
+To make it available on `PATH`, symlink the checkout executable:
+
+```bash
+mkdir -p "$HOME/.local/bin"
+ln -s "$(pwd)/dark-orchestrator" "$HOME/.local/bin/dark-orchestrator"
+```
+
+The server defaults to <http://127.0.0.1:8099>. `--url` overrides `DARK_ORCH_API_URL`, which
+overrides that default.
+
+```bash
+dark-orchestrator --url http://127.0.0.1:8099 orchestrator status
+
+dark-orchestrator process create \
+  --name "Daily report" \
+  --type python \
+  --inline "print('ready')"
+
+dark-orchestrator process create \
+  --name "Host workflow" \
+  --type bash \
+  --file workflows/run.sh
+
+dark-orchestrator job create \
+  --process-id 4ee6f8f6-0280-4f8e-a1bc-8d056ec8df10 \
+  --recurring \
+  --cron "*/5 * * * *"
+
+dark-orchestrator run list --limit 25
+```
+
+A `--file` value is relative to the server's `SCRIPT_ROOT`; it does not upload a local file.
+Successful response bodies are JSON on standard output. HTTP and network failures are JSON on
+standard error and return a non-zero exit status. Use `dark-orchestrator --help` and each command's
+`--help` option for the complete command surface.
+
 ## Frontend development
 
 Run the API and Vite development server in separate terminals:
@@ -65,8 +110,17 @@ Vite build is served directly by FastAPI.
 
 ## Tests
 
-The test and browser-test databases are separate from the development database and are reset before
-use.
+CLI contract tests require neither a running server nor PostgreSQL:
+
+```bash
+uv run pytest cli_tests
+```
+
+They invoke the real executable against a deterministic local HTTP server. Full CLI-to-application
+integration tests are deferred to a separate slice.
+
+The backend and browser-test databases are separate from the development database and are reset
+before use. Run the complete suite with:
 
 ```bash
 docker compose up -d --wait postgres
@@ -155,4 +209,6 @@ are scheduled processes which read and update Surely CRM. This keeps the orchest
 
 The implemented architecture and explicit v1 boundaries are recorded in
 [`ADR-001`](docs/architecture/adr/adr1_dark_orchestrator.md). Script source ownership and filesystem
-security are recorded in [`ADR-002`](docs/architecture/adr/adr2_process_script_sources.md).
+security are recorded in [`ADR-002`](docs/architecture/adr/adr2_process_script_sources.md). The
+JSON-first CLI contract is recorded in
+[`ADR-003`](docs/architecture/adr/adr3_command_line_client.md).
