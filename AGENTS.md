@@ -76,8 +76,7 @@ flowchart TB
 - `ProcessExecutor` owns child processes, timeout, termination, and output capture.
 - `Database` and `ScriptFileResolver` isolate PostgreSQL and filesystem concerns.
 - `web/src/App.tsx` owns dashboard state; `web/src/api.ts` is the browser REST client.
-- `cli_tests/` verifies CLI subprocess and HTTP-contract behavior without application
-  infrastructure.
+- `tests/cli/` verifies the CLI end to end through a live API and isolated PostgreSQL database.
 
 ## Architectural Rules
 

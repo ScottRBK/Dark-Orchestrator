@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-07-14
+- **Amended:** 2026-07-15
 - **Scope:** Python command-line client for the existing REST API
 
 ## Context
@@ -79,14 +80,14 @@ distribution.
 
 ### Validation
 
-CLI contract tests invoke the real executable as a subprocess and communicate with a real local HTTP
-socket. A small deterministic HTTP server supplies API responses and records requests. Tests observe
-only arguments, exit status, standard output, standard error, and HTTP requests.
+CLI integration tests under `tests/cli/` invoke the real executable as a subprocess and communicate
+with a temporary Uvicorn server over a real local HTTP socket. The server uses the isolated backend
+integration-test database, which is reset before each test.
 
-These tests verify command parsing, request mapping, JSON serialization, and error behavior without
-PostgreSQL or Docker. A full CLI-to-FastAPI-to-PostgreSQL integration suite is explicitly deferred
-to a separate slice of work. Existing backend integration tests continue to verify API behavior
-through FastAPI and real PostgreSQL.
+The tests observe only the CLI's arguments, exit status, standard output, and standard error. They
+verify the complete CLI-to-FastAPI-to-PostgreSQL path without relying on a duplicate stub of the API
+contract. Command-local help, usage-error, and network-error behavior remains tested without a live
+server where the application is not part of that behavior.
 
 Agent skills are also deferred. They will consume this public CLI contract rather than bypassing it
 with direct database or service access.
@@ -99,11 +100,11 @@ with direct database or service access.
 - The CLI remains independent from backend implementation details.
 - Every existing REST capability is available without falling back to ad hoc `curl` commands.
 - The client adds no runtime dependency or supply-chain surface.
-- CLI tests run quickly without application infrastructure.
+- CLI tests prove that the client and live application contract work together.
 
 ### Trade-offs
 
-- Contract tests do not yet prove the complete CLI-to-live-server path.
+- CLI tests require the local PostgreSQL test infrastructure and start a Uvicorn process per test.
 - The executable is distributed from a source checkout rather than as an installed Python package.
 - The CLI mirrors the current API and must evolve when that public contract changes.
 - There is still no authentication or authorization.
@@ -111,7 +112,6 @@ with direct database or service access.
 
 ## Deferred decisions
 
-1. Full-stack CLI integration tests using an isolated database lifecycle.
-2. An agent skill for operating Dark Orchestrator through the CLI.
-3. Installable package or standalone binary distribution.
-4. Authentication and credential configuration.
+1. An agent skill for operating Dark Orchestrator through the CLI.
+2. Installable package or standalone binary distribution.
+3. Authentication and credential configuration.

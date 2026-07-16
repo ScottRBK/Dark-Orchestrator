@@ -38,7 +38,7 @@ web/src/App.tsx                Dashboard state, views, and forms
 web/src/api.ts                 Typed REST client
 web/src/types.ts               Frontend API contracts
 tests/                         HTTP integration and execution tests
-cli_tests/                     CLI subprocess and HTTP-contract tests
+tests/cli/                     Full-stack CLI integration tests
 web/tests/                     Playwright browser tests
 ```
 
@@ -228,7 +228,8 @@ hydrates the nested process directly. This avoids additional queries but duplica
 of process-row mapping from `ProcessService`.
 
 Cron expressions contain exactly five fields and are evaluated in UTC. A delayed recurring job moves
-to its next occurrence from claim time; missed occurrences are not replayed individually.
+to its next occurrence from claim time; missed occurrences are not replayed individually. A run-now
+request is persisted independently from wall-clock schedule timestamps until it is claimed.
 
 ## Scheduler and Execution Flow
 
@@ -276,10 +277,10 @@ sequenceDiagram
 
 `JobService.claim_due_jobs()` performs the claim in one PostgreSQL transaction:
 
-1. select due jobs for enabled processes;
+1. select scheduled jobs that are due or have a persisted run-now request;
 2. exclude jobs that already have pending or active runs;
 3. lock selected job rows with `FOR UPDATE OF j SKIP LOCKED`;
-4. advance a recurring job or deactivate a one-off job;
+4. clear the run-now request and advance a recurring job or deactivate a one-off job;
 5. update process and job last-run timestamps; and
 6. insert an active `JobRun`.
 
@@ -380,6 +381,7 @@ erDiagram
         boolean recurring
         string cron
         timestamptz next_run_at
+        boolean run_requested
         boolean active
     }
 
@@ -483,7 +485,7 @@ These limits matter before treating the scheduler as a distributed worker cluste
 Tests exercise public behavior rather than internal call graphs:
 
 - FastAPI tests use the HTTP API and real PostgreSQL;
-- CLI tests invoke the executable against a deterministic local HTTP server;
+- CLI tests invoke the executable against a temporary Uvicorn server and real PostgreSQL;
 - execution tests launch harmless real Bash and Python processes;
 - source tests use real files and filesystem permissions;
 - concurrency tests use real database claims and orchestrator instances;
@@ -494,9 +496,9 @@ Mocks are reserved for external systems that cannot be run locally. AgentShell a
 not required for orchestrator integration tests because harmless scripts exercise the execution
 boundary.
 
-CLI contract tests deliberately stop at the HTTP boundary and require neither FastAPI nor
-PostgreSQL. A full-stack CLI integration suite is deferred to a separate slice rather than using a
-long-lived database implicitly.
+CLI integration tests exercise the complete CLI-to-FastAPI-to-PostgreSQL path. Each test uses the
+backend-test database reset lifecycle and a temporary Uvicorn process, so no long-lived application
+server or development database is used implicitly.
 
 ## Current Design Pressure Points
 

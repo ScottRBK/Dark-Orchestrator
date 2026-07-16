@@ -110,14 +110,8 @@ Vite build is served directly by FastAPI.
 
 ## Tests
 
-CLI contract tests require neither a running server nor PostgreSQL:
-
-```bash
-uv run pytest cli_tests
-```
-
-They invoke the real executable against a deterministic local HTTP server. Full CLI-to-application
-integration tests are deferred to a separate slice.
+CLI tests live under `tests/cli/` and are included in the normal pytest suite. They invoke the real
+executable against a temporary Uvicorn server and the isolated backend-test database.
 
 The backend and browser-test databases are separate from the development database and are reset
 before use. Run the complete suite with:

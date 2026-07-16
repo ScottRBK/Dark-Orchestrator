@@ -161,10 +161,10 @@ class JobService:
             await connection.execute(
                 """
                 UPDATE jobs
-                SET active = TRUE, next_run_at = %s, modified_at = %s
+                SET active = TRUE, run_requested = TRUE, modified_at = %s
                 WHERE job_id = %s
                 """,
-                (datetime.now(UTC), datetime.now(UTC), job_id),
+                (datetime.now(UTC), job_id),
             )
         return await self.get_job(job_id)
 
@@ -194,7 +194,7 @@ class JobService:
                 + """
                     WHERE j.active
                       AND p.enabled
-                      AND j.next_run_at <= %s
+                      AND (j.run_requested OR j.next_run_at <= %s)
                       AND NOT EXISTS (
                           SELECT 1
                           FROM job_runs active_run
@@ -222,7 +222,7 @@ class JobService:
                     """
                     UPDATE jobs
                     SET last_run_at = %s, next_run_at = %s, active = %s,
-                        modified_at = %s
+                        run_requested = FALSE, modified_at = %s
                     WHERE job_id = %s
                     """,
                     (now, next_run_at, active, now, job.job_id),

@@ -94,6 +94,7 @@ classDiagram
         boolean recurring
         string cron
         timestamptz next_run_at
+        boolean run_requested
         boolean active
     }
 
@@ -151,7 +152,8 @@ A job references one process and is either:
 - a recurring job with a strict five-field cron expression.
 
 Cron schedules are evaluated in UTC. When a delayed recurring job is claimed, its next occurrence is
-calculated from the claim time; v1 does not replay every missed occurrence.
+calculated from the claim time; v1 does not replay every missed occurrence. A run-now request is
+persisted as a boolean independently from wall-clock schedule timestamps until it is claimed.
 
 The orchestrator dispatches on a configurable heartbeat and can also be woken immediately after
 relevant API changes. Dispatch is bounded by `MAX_CONCURRENT_JOBS`.
@@ -159,12 +161,13 @@ relevant API changes. Dispatch is bounded by `MAX_CONCURRENT_JOBS`.
 Due jobs are claimed in a PostgreSQL transaction using `FOR UPDATE OF j SKIP LOCKED`. The same
 transaction:
 
-1. advances or deactivates the job;
+1. clears any run-now request and advances or deactivates the job;
 2. updates the process and job last-run timestamps; and
 3. creates an active `JobRun`.
 
 This prevents two application instances from claiming the same occurrence. A due job is excluded
-while it already has a pending or active run, so runs of the same job do not overlap.
+while it already has a pending or active run, so runs of the same job do not overlap. A run-now
+request made during an active run remains queued until that run finishes.
 
 The schema allows a `pending` run state, but v1 claims directly into `active`. Execution tasks are
 created only up to the available concurrency limit.

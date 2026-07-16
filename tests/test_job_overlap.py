@@ -49,19 +49,21 @@ def test_run_now_queues_behind_an_existing_run_of_the_same_job() -> None:
         assert first_run is not None
 
         # Act
-        client.post(f"/api/jobs/{job['job_id']}/run-now")
+        run_now_response = client.post(f"/api/jobs/{job['job_id']}/run-now")
         deadline = monotonic() + 3
-        completed_runs = []
+        runs = []
         while monotonic() < deadline:
             runs = client.get(f"/api/runs?job_id={job['job_id']}").json()
-            completed_runs = [run for run in runs if run["status"] == "completed"]
-            if len(completed_runs) == 2:
+            if len(runs) == 2 and all(
+                run["status"] in {"completed", "error"} for run in runs
+            ):
                 break
             sleep(0.03)
 
         # Assert
-        assert len(completed_runs) == 2
-        newest, oldest = completed_runs
+        assert run_now_response.status_code == 200
+        assert [run["status"] for run in runs] == ["completed", "completed"]
+        newest, oldest = runs
         first_finished = datetime.fromisoformat(
             oldest["finished_at"].replace("Z", "+00:00")
         )
