@@ -84,6 +84,10 @@ dark-orchestrator job create \
   --recurring \
   --cron "*/5 * * * *"
 
+dark-orchestrator job create \
+  --process-id 4ee6f8f6-0280-4f8e-a1bc-8d056ec8df10 \
+  -- --campaign-location "Leeds, England"
+
 dark-orchestrator run list --limit 25
 ```
 
@@ -154,9 +158,10 @@ process is created or updated and again before each run. The default root is
 Python executes with the interpreter running Dark Orchestrator, and Bash executes with Bash.
 AgentShell agents can be invoked by placing the relevant `agent-shell` command in either source.
 
-A job schedules a process. One-off jobs run immediately unless `next_run_at` is supplied. Recurring
-jobs require a strict five-field cron expression. All dates crossing the API must include a timezone
-and are normalized to UTC.
+A job schedules a process and may provide a fixed list of command-line arguments. One-off jobs run
+immediately unless `next_run_at` is supplied. Recurring jobs require a strict five-field cron
+expression. All dates crossing the API must include a timezone and are normalized to UTC. In the
+CLI, arguments after `--` are passed to the process unchanged.
 
 ## API overview
 

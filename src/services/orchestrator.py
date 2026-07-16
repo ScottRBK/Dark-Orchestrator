@@ -120,7 +120,10 @@ class Orchestrator:
 
     async def _execute(self, claimed: ClaimedJob) -> None:
         try:
-            result = await self._executor.execute(claimed.process)
+            result = await self._executor.execute(
+                claimed.process,
+                claimed.arguments,
+            )
             if result.return_code == 0:
                 await self._job_service.finish_run(
                     claimed.job_run_id,

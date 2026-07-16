@@ -28,6 +28,7 @@ export interface Process {
 export interface Job {
   job_id: string
   process: Process
+  arguments: string[]
   recurring: boolean
   cron: string | null
   last_run_at: string | null
@@ -76,6 +77,7 @@ export interface ProcessInput {
 
 export interface JobInput {
   process_id: string
+  arguments?: string[]
   recurring?: boolean
   cron?: string
   next_run_at?: string

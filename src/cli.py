@@ -98,6 +98,12 @@ def add_job_commands(subcommands: Any) -> None:
     create_job.add_argument("--recurring", action="store_true")
     create_job.add_argument("--cron")
     create_job.add_argument("--next-run-at")
+    create_job.add_argument(
+        "process_arguments",
+        nargs=argparse.REMAINDER,
+        metavar="ARG",
+        help="Arguments passed to the process after --",
+    )
 
     update_job = commands.add_parser("update", help="Update a job")
     update_job.add_argument("job_id")
@@ -222,6 +228,11 @@ def job_request(
         for name in ["cron", "next_run_at"]:
             if (value := getattr(arguments, name)) is not None:
                 body[name] = value
+        process_arguments = arguments.process_arguments
+        if process_arguments[:1] == ["--"]:
+            process_arguments = process_arguments[1:]
+        if process_arguments:
+            body["arguments"] = process_arguments
         return "POST", "/api/jobs", body
     if command == "update":
         body = {

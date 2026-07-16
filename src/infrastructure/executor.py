@@ -31,8 +31,12 @@ class ProcessExecutor:
         self._max_output_bytes = max_output_bytes
         self._script_files = script_files
 
-    async def execute(self, process: Process) -> ExecutionResult:
-        command, working_directory = self._command(process)
+    async def execute(
+        self,
+        process: Process,
+        arguments: tuple[str, ...],
+    ) -> ExecutionResult:
+        command, working_directory = self._command(process, arguments)
         child = await asyncio.create_subprocess_exec(
             *command,
             cwd=working_directory,
@@ -75,17 +79,25 @@ class ProcessExecutor:
                 pass
         await child.wait()
 
-    def _command(self, process: Process) -> tuple[tuple[str, ...], str | None]:
+    def _command(
+        self,
+        process: Process,
+        arguments: tuple[str, ...],
+    ) -> tuple[tuple[str, ...], str | None]:
         if isinstance(process.source, FileProcessSource):
             path = str(self._script_files.resolve(process.source.path))
             if process.type is ProcessType.BASH:
-                return (("/usr/bin/env", "bash", path), str(self._script_files.root))
-            return ((sys.executable, path), str(self._script_files.root))
+                command = ("/usr/bin/env", "bash", path, *arguments)
+            else:
+                command = (sys.executable, path, *arguments)
+            return command, str(self._script_files.root)
 
         if process.type is ProcessType.BASH:
             command = ("/usr/bin/env", "bash", "-c", process.source.content)
+            if arguments:
+                command = (*command, process.name, *arguments)
         else:
-            command = (sys.executable, "-c", process.source.content)
+            command = (sys.executable, "-c", process.source.content, *arguments)
         return command, None
 
     async def _read_output(self, stream: asyncio.StreamReader) -> bytes:

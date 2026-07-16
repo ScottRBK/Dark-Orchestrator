@@ -184,6 +184,46 @@ def test_user_can_manage_processes(live_server_url: str) -> None:
     assert all(result.stderr == "" for result in results)
 
 
+def test_user_can_create_a_job_with_process_arguments(
+    live_server_url: str,
+) -> None:
+    # Arrange
+    process_result = run_cli(
+        "--url",
+        live_server_url,
+        "process",
+        "create",
+        "--name",
+        "Contact agent",
+        "--type",
+        "python",
+        "--inline",
+        "print('contact agent')",
+    )
+    process_id = json.loads(process_result.stdout)["process_id"]
+
+    # Act
+    result = run_cli(
+        "--url",
+        live_server_url,
+        "job",
+        "create",
+        "--process-id",
+        process_id,
+        "--",
+        "--campaign-location",
+        "Leeds, England",
+    )
+
+    # Assert
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["arguments"] == [
+        "--campaign-location",
+        "Leeds, England",
+    ]
+    assert result.stderr == ""
+
+
 def test_user_can_manage_jobs_and_read_run_history(
     live_server_url: str,
 ) -> None:

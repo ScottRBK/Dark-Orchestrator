@@ -1,10 +1,14 @@
 from datetime import UTC, datetime
+from typing import Annotated
 from uuid import UUID, uuid4
 
 from croniter import croniter
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from src.models.process import Process
+
+
+JobArgument = Annotated[str, Field(max_length=1_000)]
 
 
 def require_timezone(value: datetime | None) -> datetime | None:
@@ -15,9 +19,17 @@ def require_timezone(value: datetime | None) -> datetime | None:
 
 class JobCreate(BaseModel):
     process_id: UUID
+    arguments: list[JobArgument] = Field(default_factory=list, max_length=50)
     recurring: bool = False
     cron: str | None = Field(default=None, max_length=120)
     next_run_at: datetime | None = None
+
+    @field_validator("arguments")
+    @classmethod
+    def reject_null_bytes(cls, value: list[str]) -> list[str]:
+        if any("\0" in argument for argument in value):
+            raise ValueError("arguments must not contain null bytes")
+        return value
 
     @field_validator("next_run_at")
     @classmethod
@@ -59,6 +71,7 @@ class JobUpdate(BaseModel):
 class Job(BaseModel):
     job_id: UUID = Field(default_factory=uuid4)
     process: Process
+    arguments: list[JobArgument] = Field(default_factory=list, max_length=50)
     recurring: bool = False
     cron: str | None = None
     last_run_at: datetime | None = None

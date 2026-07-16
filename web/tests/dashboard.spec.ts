@@ -30,6 +30,41 @@ test('user can create and run an inline process', async ({ page }) => {
   ).toBeVisible()
 })
 
+test('user can pass arguments to a process', async ({ page }) => {
+  // Arrange
+  const processName = `Contact agent ${Date.now()}`
+  await page.goto('/')
+  await page.getByRole('button', { name: 'New process' }).click()
+  await page.getByLabel('Process name').fill(processName)
+  await page.getByLabel('Process type').selectOption('python')
+  await page.getByLabel('Script').fill([
+    'import argparse',
+    'parser = argparse.ArgumentParser()',
+    "parser.add_argument('--campaign-location', required=True)",
+    'print(parser.parse_args().campaign_location)',
+  ].join('\n'))
+  await page.getByRole('button', { name: 'Create process' }).click()
+
+  // Act
+  const processCard = page.getByTestId('process-card').filter({
+    hasText: processName,
+  })
+  await processCard.getByRole('button', { name: 'Schedule' }).click()
+  await page.getByLabel('Process arguments').fill([
+    '--campaign-location',
+    'Leeds, England',
+  ].join('\n'))
+  await page.getByRole('button', { name: 'Create job' }).click()
+
+  // Assert
+  const runRow = page.getByTestId('run-row').filter({
+    hasText: processName,
+  }).first()
+  await expect(runRow).toContainText('Completed')
+  await runRow.click()
+  await expect(page.getByText('Leeds, England', { exact: true })).toBeVisible()
+})
+
 test('user can create and run a host-file process', async ({ page }) => {
   // Arrange
   const processName = `Host workflow ${Date.now()}`

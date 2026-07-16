@@ -16,7 +16,7 @@ from src.services.process_service import ProcessService
 
 _JOB_SELECT = """
     SELECT
-        j.job_id, j.recurring, j.cron, j.last_run_at, j.next_run_at,
+        j.job_id, j.arguments, j.recurring, j.cron, j.last_run_at, j.next_run_at,
         j.created_at, j.created_by, j.modified_at, j.modified_by, j.active,
         p.process_id AS process_process_id,
         p.type AS process_type,
@@ -39,7 +39,7 @@ _RUN_SELECT = """
         r.job_run_id, r.status, r.captured_output,
         r.started_at, r.finished_at,
         e.exception,
-        j.job_id, j.recurring, j.cron, j.last_run_at, j.next_run_at,
+        j.job_id, j.arguments, j.recurring, j.cron, j.last_run_at, j.next_run_at,
         j.created_at, j.created_by, j.modified_at, j.modified_by, j.active,
         p.process_id AS process_process_id,
         p.type AS process_type,
@@ -64,6 +64,7 @@ _RUN_SELECT = """
 class ClaimedJob:
     job_run_id: UUID
     process: Process
+    arguments: tuple[str, ...]
 
 
 class JobService:
@@ -85,6 +86,7 @@ class JobService:
         job = Job(
             job_id=uuid4(),
             process=process,
+            arguments=request.arguments,
             recurring=request.recurring,
             cron=request.cron,
             next_run_at=next_run_at,
@@ -95,16 +97,17 @@ class JobService:
             await connection.execute(
                 """
                 INSERT INTO jobs (
-                    job_id, process_id, recurring, cron, last_run_at,
+                    job_id, process_id, arguments, recurring, cron, last_run_at,
                     next_run_at, created_at, created_by, modified_at,
                     modified_by, active
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 """,
                 (
                     job.job_id,
                     process.process_id,
+                    job.arguments,
                     job.recurring,
                     job.cron,
                     job.last_run_at,
@@ -239,7 +242,9 @@ class JobService:
                     """,
                     (job_run_id, job.job_id, JobRunStatus.ACTIVE, now),
                 )
-                claimed.append(ClaimedJob(job_run_id, job.process))
+                claimed.append(
+                    ClaimedJob(job_run_id, job.process, tuple(job.arguments))
+                )
         return claimed
 
     async def finish_run(
@@ -327,6 +332,7 @@ class JobService:
         return Job(
             job_id=row["job_id"],
             process=cls._process_from_row(row),
+            arguments=row["arguments"],
             recurring=row["recurring"],
             cron=row["cron"],
             last_run_at=row["last_run_at"],

@@ -1,0 +1,2 @@
+ALTER TABLE jobs
+    ADD COLUMN arguments TEXT[] NOT NULL DEFAULT '{}';

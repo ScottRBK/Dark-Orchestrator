@@ -181,7 +181,7 @@ separate request DTOs, domain entities, and persistence entities for the same sm
 The principal models are:
 
 - `Process`, with a Python or Bash type and discriminated source;
-- `Job`, which references a process and describes one-off or recurring scheduling;
+- `Job`, which references a process, stores its arguments, and describes its schedule;
 - `JobRun`, which records execution state and output; and
 - `JobException`, which records one failure description for a run.
 
@@ -216,7 +216,7 @@ write the file content.
 
 `JobService` owns schedule and run persistence:
 
-- verify a process when creating a job;
+- verify a process and persist its invocation arguments when creating a job;
 - calculate initial and recurring run times;
 - list, retrieve, update, run, and delete jobs;
 - transactionally claim due work;
@@ -260,7 +260,7 @@ sequenceDiagram
     J-->>O: ClaimedJob values
 
     loop Each claimed job
-        O->>E: execute(process)
+        O->>E: execute(process, arguments)
         opt File source
             E->>F: resolve and revalidate path
             F-->>E: absolute path beneath script root
@@ -304,17 +304,21 @@ does not provide cluster-wide pause, stop, or capacity controls.
 
 ## Process Execution Boundary
 
-`ProcessExecutor` translates a process model into an operating-system command.
+`ProcessExecutor` translates a process model and its job arguments into an operating-system
+command. Arguments remain separate operating-system values; they are never joined into shell text.
 
 ### Inline sources
 
-- Bash: `/usr/bin/env bash -c <content>`
-- Python: the current Python interpreter with `-c <content>`
+- Bash: `/usr/bin/env bash -c <content> [<process-name> arguments...]`
+- Python: the current Python interpreter with `-c <content> [arguments...]`
+
+For inline Bash with arguments, the process name occupies Bash's required `$0` position so the
+first job argument is consistently available as `$1`.
 
 ### File sources
 
-- Bash: `/usr/bin/env bash <resolved-path>`
-- Python: the current Python interpreter with `<resolved-path>`
+- Bash: `/usr/bin/env bash <resolved-path> [arguments...]`
+- Python: the current Python interpreter with `<resolved-path> [arguments...]`
 - Working directory: configured script root
 
 Every child starts in a new POSIX process session. Standard error is merged into standard output so
@@ -378,6 +382,7 @@ erDiagram
     JOB {
         uuid job_id PK
         uuid process_id FK
+        text_array arguments
         boolean recurring
         string cron
         timestamptz next_run_at

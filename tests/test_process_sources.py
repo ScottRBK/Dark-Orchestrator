@@ -91,6 +91,50 @@ def test_user_can_execute_a_process_from_a_file_source(tmp_path: Path) -> None:
         assert run["captured_output"] == "executed from a host file\n"
 
 
+def test_user_can_pass_job_arguments_to_a_file_process(tmp_path: Path) -> None:
+    # Arrange
+    script_path = tmp_path / "contact_agent.py"
+    script_path.write_text(
+        "import argparse\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--campaign-location', required=True)\n"
+        "options = parser.parse_args()\n"
+        "print(options.campaign_location)\n"
+    )
+    settings = Settings(
+        DATABASE_URL=DATABASE_URL,
+        HEART_BEAT_INTERVAL=0.05,
+        SCRIPT_ROOT=tmp_path,
+    )
+
+    with TestClient(create_app(settings)) as client:
+        process = client.post(
+            "/api/processes",
+            json={
+                "name": "Contact agent",
+                "type": "python",
+                "source": {"kind": "file", "path": "contact_agent.py"},
+            },
+        ).json()
+
+        # Act
+        job_response = client.post(
+            "/api/jobs",
+            json={
+                "process_id": process["process_id"],
+                "arguments": ["--campaign-location", "Leeds, England"],
+            },
+        )
+        job = job_response.json()
+        run = wait_for_run(client, job["job_id"])
+
+        # Assert
+        assert job_response.status_code == 201
+        assert job["arguments"] == ["--campaign-location", "Leeds, England"]
+        assert run["status"] == "completed"
+        assert run["captured_output"] == "Leeds, England\n"
+
+
 def test_file_process_source_must_be_readable(tmp_path: Path) -> None:
     # Arrange
     script_path = tmp_path / "private.py"

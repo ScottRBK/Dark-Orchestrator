@@ -1070,10 +1070,14 @@ function JobDialog({
   const [mode, setMode] = useState<JobMode>('immediate')
   const [scheduledFor, setScheduledFor] = useState('')
   const [cron, setCron] = useState('0 9 * * *')
+  const [processArguments, setProcessArguments] = useState('')
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    const input: JobInput = { process_id: process.process_id }
+    const input: JobInput = {
+      process_id: process.process_id,
+      arguments: processArguments.split('\n').filter((argument) => argument.length > 0),
+    }
     if (mode === 'scheduled') {
       input.next_run_at = new Date(scheduledFor).toISOString()
     }
@@ -1142,6 +1146,19 @@ function JobDialog({
             <small>Five fields: minute, hour, day, month, weekday.</small>
           </label>
         )}
+
+        <label>
+          <span>Process arguments</span>
+          <textarea
+            maxLength={50_000}
+            onChange={(event) => setProcessArguments(event.target.value)}
+            placeholder={'--campaign-location\nLeeds, England'}
+            rows={4}
+            spellCheck={false}
+            value={processArguments}
+          />
+          <small>Enter one argument per line.</small>
+        </label>
 
         <div className="schedule-summary">
           <Icon name="spark" size={17} />
