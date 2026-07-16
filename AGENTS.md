@@ -87,6 +87,11 @@ flowchart TB
 - File sources remain beneath `SCRIPT_ROOT` and are never modified by Dark Orchestrator.
 - Prefer the current direct design over speculative abstractions.
 
+See the [test strategy](docs/test-strategy.md) for test boundaries, database isolation, and the
+integration-first approach. Read this before adding any new tests, if any new tests you hope to 
+implement do not align to existing test patterns **YOU MUST DISCUS WITH THE USER FIRST** and make
+it clear why and how you will deviate from existing patterns and get their agreement before continuing.
+
 See the [detailed architecture](docs/architecture/architecture.md) for lifecycle, persistence,
 scheduling, execution, frontend, and deployment details. This should be updated following any work.
 Significant decisions are recorded in the [ADR index](docs/architecture/adr/index.md), this should

@@ -110,6 +110,9 @@ Vite build is served directly by FastAPI.
 
 ## Tests
 
+See the [test strategy](docs/test-strategy.md) for the approach, test boundaries, and database
+isolation.
+
 CLI tests live under `tests/cli/` and are included in the normal pytest suite. They invoke the real
 executable against a temporary Uvicorn server and the isolated backend-test database.
 
