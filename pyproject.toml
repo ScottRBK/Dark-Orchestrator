@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.139.0,<1",
     "psycopg[binary]>=3.3.4,<4",
     "pydantic-settings>=2.14.2,<3",
+    "requests>=2.34.2",
     "uvicorn>=0.51.0,<1",
 ]
 

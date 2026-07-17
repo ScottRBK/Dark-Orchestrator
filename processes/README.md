@@ -13,3 +13,7 @@ DARK_ORCH_SCRIPT_ROOT=/path/to/workflows uv run python main.py
 
 A container deployment should mount the selected directory into the application container,
 preferably read-only.
+
+## Processes
+
+1. `contact_agent.py` Script to scrape businesses from open street map
